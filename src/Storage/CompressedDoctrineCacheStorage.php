@@ -26,7 +26,11 @@ class CompressedDoctrineCacheStorage implements CacheStorageInterface
     public function fetch($key)
     {
         try {
-            $cache = unserialize(gzuncompress($this->cache->fetch($key)));
+            $content = $this->cache->fetch($key);
+            if ($content === false) {
+                return;
+            }
+            $cache = unserialize(gzuncompress($content));
             if ($cache instanceof CacheEntry) {
                 return $cache;
             }

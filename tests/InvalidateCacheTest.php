@@ -78,7 +78,7 @@ class InvalidateCacheTest extends TestCase
         $this->assertEquals(CacheMiddleware::HEADER_CACHE_HIT, $response->getHeaderLine('X-Kevinrob-Cache'));
     }
 
-    public function unsafeMethods()
+    public static function unsafeMethods()
     {
         return [
             'delete' => ['delete'],
@@ -87,7 +87,7 @@ class InvalidateCacheTest extends TestCase
         ];
     }
 
-    public function safemethods()
+    public static function safemethods()
     {
         return [
             'get' => ['get'],

@@ -81,7 +81,7 @@ class PrivateCacheTest extends TestCase
         }
     }
 
-    public function cacheProvider()
+    public static function cacheProvider()
     {
         $TMP_DIR = __DIR__.'/tmp/';
         return [

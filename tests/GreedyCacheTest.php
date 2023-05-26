@@ -135,7 +135,7 @@ class GreedyCacheTest extends TestCase
 
     }
 
-    public function cachableRequestProvider()
+    public static function cachableRequestProvider()
     {
         return [
             [new Request('GET', '/vary')],
@@ -146,7 +146,7 @@ class GreedyCacheTest extends TestCase
         ];
     }
 
-    public function nonCachableRequestProvider()
+    public static function nonCachableRequestProvider()
     {
         return [
             [new Request('POST', '/vary')],
@@ -154,7 +154,7 @@ class GreedyCacheTest extends TestCase
         ];
     }
 
-    public function varyingCachableRequestProvider()
+    public static function varyingCachableRequestProvider()
     {
         return [
             [
