@@ -8,6 +8,7 @@ use Doctrine\Common\Cache\ArrayCache;
 use Doctrine\Common\Cache\ChainCache;
 use Doctrine\Common\Cache\FilesystemCache;
 use Doctrine\Common\Cache\PhpFileCache;
+use Doctrine\Common\Cache\Psr6\DoctrineProvider;
 use GuzzleHttp\Psr7\Request;
 use GuzzleHttp\Psr7\Response;
 use Kevinrob\GuzzleCache\Storage\CacheStorageInterface;
@@ -18,9 +19,9 @@ use Kevinrob\GuzzleCache\Storage\Psr6CacheStorage;
 use Kevinrob\GuzzleCache\Storage\Psr16CacheStorage;
 use Kevinrob\GuzzleCache\Storage\VolatileRuntimeStorage;
 use Kevinrob\GuzzleCache\Strategy\PrivateCacheStrategy;
-use League\Flysystem\Adapter\Local;
 use League\Flysystem\Local\LocalFilesystemAdapter;
 use PHPUnit\Framework\TestCase;
+use Symfony\Component\Cache\Adapter\ArrayAdapter;
 
 class PrivateCacheTest extends TestCase
 {
@@ -85,17 +86,28 @@ class PrivateCacheTest extends TestCase
     public static function cacheProvider()
     {
         $TMP_DIR = __DIR__.'/tmp/';
-        return [
-            'doctrine.arraycache' => [ new DoctrineCacheStorage(new ArrayCache()) ],
-            'doctrine.chaincache' => [ new DoctrineCacheStorage(new ChainCache([new ArrayCache()])) ],
-            'doctrine.filesystem' => [ new DoctrineCacheStorage(new FilesystemCache($TMP_DIR)), $TMP_DIR ],
-            'doctrine.phpfile' => [ new DoctrineCacheStorage(new PhpFileCache($TMP_DIR)), $TMP_DIR ],
+
+        $caches = [
             'flysystem' => [ new FlysystemStorage(new LocalFilesystemAdapter($TMP_DIR)), $TMP_DIR ],
             'psr6' => [ new Psr6CacheStorage(new ArrayCachePool()) ],
             'psr16' => [ new Psr16CacheStorage(new SimpleCacheBridge(new ArrayCachePool())) ],
-            'compressedDoctrineStorage' => [ new CompressedDoctrineCacheStorage(new ArrayCache()) ],
             'volatileruntimeStorage' => [ new VolatileRuntimeStorage() ]
         ];
+
+        if (class_exists(ArrayCache::class)) {
+            $caches = array_merge($caches, [
+                'doctrine.arraycache' => [ new DoctrineCacheStorage(new ArrayCache()) ],
+                'doctrine.chaincache' => [ new DoctrineCacheStorage(new ChainCache([new ArrayCache()])) ],
+                'doctrine.filesystem' => [ new DoctrineCacheStorage(new FilesystemCache($TMP_DIR)), $TMP_DIR ],
+                'doctrine.phpfile' => [ new DoctrineCacheStorage(new PhpFileCache($TMP_DIR)), $TMP_DIR ],
+                'compressedDoctrineStorage' => [ new CompressedDoctrineCacheStorage(new ArrayCache()) ],
+            ]);
+        } else {
+            $caches['doctrine.wrapper'] = [ new DoctrineCacheStorage(DoctrineProvider::wrap(new ArrayAdapter())) ];
+            $caches['compressenDoctrine.wrapper'] = [ new CompressedDoctrineCacheStorage(DoctrineProvider::wrap(new ArrayAdapter())) ];
+        }
+
+        return $caches;
     }
 
     /**

@@ -9,6 +9,7 @@ use Doctrine\Common\Cache\CacheProvider;
 use Doctrine\Common\Cache\ChainCache;
 use Doctrine\Common\Cache\FilesystemCache;
 use Doctrine\Common\Cache\PhpFileCache;
+use Doctrine\Common\Cache\Psr6\DoctrineProvider;
 use GuzzleHttp\Client;
 use GuzzleHttp\HandlerStack;
 use GuzzleHttp\Promise\FulfilledPromise;
@@ -25,6 +26,7 @@ use Kevinrob\GuzzleCache\Strategy\PublicCacheStrategy;
 use League\Flysystem\Local\LocalFilesystemAdapter;
 use Psr\Http\Message\RequestInterface;
 use PHPUnit\Framework\TestCase;
+use Symfony\Component\Cache\Adapter\ArrayAdapter;
 
 class PublicCacheTest extends TestCase
 {
@@ -96,16 +98,24 @@ class PublicCacheTest extends TestCase
         $TMP_DIR = __DIR__.'/tmp/';
 
         $cacheProviders = [
-            new DoctrineCacheStorage(new ArrayCache()),
-            new DoctrineCacheStorage(new ChainCache([new ArrayCache()])),
-            new DoctrineCacheStorage(new FilesystemCache($TMP_DIR)),
-            new DoctrineCacheStorage(new PhpFileCache($TMP_DIR)),
             new FlysystemStorage(new LocalFilesystemAdapter($TMP_DIR)),
             new Psr6CacheStorage(new ArrayCachePool()),
             new Psr16CacheStorage(new SimpleCacheBridge(new ArrayCachePool())),
-            new CompressedDoctrineCacheStorage(new ArrayCache()),
             new VolatileRuntimeStorage(),
         ];
+
+        if (class_exists(ArrayCache::class)) {
+            $cacheProviders = array_merge($cacheProviders, [
+                new DoctrineCacheStorage(new ArrayCache()),
+                new DoctrineCacheStorage(new ChainCache([new ArrayCache()])),
+                new DoctrineCacheStorage(new FilesystemCache($TMP_DIR)),
+                new DoctrineCacheStorage(new PhpFileCache($TMP_DIR)),
+                new CompressedDoctrineCacheStorage(new ArrayCache()),
+            ]);
+        } else {
+            $cacheProviders[] = new DoctrineCacheStorage(DoctrineProvider::wrap(new ArrayAdapter()));
+            $cacheProviders[] = new CompressedDoctrineCacheStorage(DoctrineProvider::wrap(new ArrayAdapter()));
+        }
 
         $request = new Request('GET', 'test.local');
         $response = new Response(
